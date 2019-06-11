@@ -322,7 +322,8 @@ vector<vector<double>> PATHPLANER::trajectories_sample(
 	}
 
 	vector<double> getxy1,getxy2,getxy3;
-	if(change_lane = true){  //set further points to get more smooth trajectory, avoid large lateral jerk.
+	if(change_lane == true){  
+		//set further points to get more smooth trajectory, avoid large lateral jerk.
 		getxy1= getXY(car_s + 50, 4*lane +2, map_waypoints_s, map_waypoints_x, map_waypoints_y);
 		getxy2= getXY(car_s + 70, 4*lane +2, map_waypoints_s, map_waypoints_x, map_waypoints_y);
 		getxy3= getXY(car_s + 90, 4*lane +2, map_waypoints_s, map_waypoints_x, map_waypoints_y);

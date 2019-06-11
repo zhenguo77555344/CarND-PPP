@@ -8,14 +8,9 @@
 #include "Eigen-3.3/Eigen/Core"
 #include "Eigen-3.3/Eigen/QR"
 #include "json.hpp"
-//#include "spline.h"
 #include "helpers.h"
 
 #include "PathPlaner.h"
-
-#include "prediction.h"
-#include "vehicle.h"
-#include "trajectory.h"
 
 using namespace std;
 using json = nlohmann::json;

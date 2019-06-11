@@ -6,7 +6,6 @@
 #include <iostream>
 
 #include "spline.h"
-//#include "helpers.h"
 
 using namespace std;
 
