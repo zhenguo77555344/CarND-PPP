@@ -1,9 +1,12 @@
 #ifndef PATHPLANER_H
 #define PATHPLANER_H
 
+#define DEBUG_BUTTON 1
+
 #include <vector>
 #include <math.h>
 #include <iostream>
+#include <string>
 
 #include "spline.h"
 
@@ -20,6 +23,7 @@ struct SENSOR_FUSION{
     // for Main vehicle
     double car_yaw;
     double car_velocity;
+    //
 };
 
 class SENSOR_FUSION_LIST{
@@ -29,7 +33,13 @@ class SENSOR_FUSION_LIST{
 
     private:
         int m_size;
+};
 
+struct LANE_INFO{
+    vector<float> vehicle_ID_lane_0;
+	vector<float> vehicle_ID_lane_1;
+	vector<float> vehicle_ID_lane_2;
+	vector<float> vehicle_ID_lane_unknow;
 };
 
 class PATHPLANER{
@@ -37,8 +47,7 @@ class PATHPLANER{
         PATHPLANER(SENSOR_FUSION_LIST perception_data,double time_step);
         ~PATHPLANER();
 
-
-        vector<float> predication(vector<vector<double>> sensor_fusion,int path_size, const double &lane, double future_car_s);
+        vector<float> predication(int path_size, const double &lane, double future_car_s);
         vector<float> predication_within_lane(int path_size, const double &lane, double future_car_s);
         vector<float> predication_neighbour_lane(int path_size, const double &lane, double future_car_s);
         bool veicle_state_machine(vector<float> prediction_front, vector<float> prediction_left_right,double &ref_vel, double &lane, double max_v);
@@ -55,7 +64,14 @@ class PATHPLANER{
 								  const vector<double> &map_waypoints_s, 
 								  double lane, double ref_vel);
 
+    public:
+        string get_main_car_lane();
+        LANE_INFO get_other_car_lane();
+
     private:
+
+        vector<float> calc_min_pre_dis(vector<float> vehicle_ID,int path_size,double future_car_s,string calc_mode);
+        
         inline double cost_buffer(double weight_buffer, double diff_s)
         {
 	        double cost_buf = -1;
@@ -136,11 +152,10 @@ class PATHPLANER{
         return {x,y};
         }
 
-
-
     private:
         SENSOR_FUSION_LIST m_vehicle_localization;
         double m_time_step;
+
 };
 
 

@@ -1,6 +1,5 @@
 #include "PathPlaner.h"
-//#include "helpers.h"
-
+#include<algorithm>
 
 PATHPLANER::PATHPLANER(SENSOR_FUSION_LIST perception_data,double time_step){
     m_vehicle_localization = perception_data;
@@ -9,50 +8,14 @@ PATHPLANER::PATHPLANER(SENSOR_FUSION_LIST perception_data,double time_step){
 
 }
 
-/*
-PATHPLANER::PATHPLANER(int ID){
-    m_ID = ID;
-    cout<<"Hello Path Planer!"<<endl;
-    cout<<"The ID is"<<m_ID<<endl;
-}
-*/
 PATHPLANER::~PATHPLANER(){
 
-}
-
-vector<float>PATHPLANER::predication(vector<vector<double>> sensor_fusion,int path_size, const double &lane, double future_car_s){
-	float too_close = -1;
-	float targete_vel = -1;
-	double too_close_min = 1000;
-	for(int i=0; i<sensor_fusion.size(); i++){
-		double d = sensor_fusion[i][6];
-		// Main vehicle is in the middle lane at the beginning of running
-		if(d>4*lane && d<4*lane+4){
-			double front_car_vx = sensor_fusion[i][3];
-			double front_car_vy = sensor_fusion[i][4];
-			double front_car_v = sqrt(front_car_vx*front_car_vx + front_car_vy*front_car_vy);
-			double front_car_s = sensor_fusion[i][5];
-
-			double future_front_car_s = front_car_s+front_car_v*0.02*path_size;
-
-			if(future_front_car_s > future_car_s){
-				if((future_front_car_s - future_car_s) < too_close_min){
-					too_close = future_front_car_s - future_car_s;
-					too_close_min = too_close;
-					targete_vel = front_car_v;
-				}
-			}
-		}
-	}
-	//cout<<too_close<<"  "<<targete_vel<<endl;
-
-	return {too_close, targete_vel};
 }
 
 vector<float>PATHPLANER::predication_within_lane(int path_size, const double &lane, double future_car_s){
 	float too_close = -1;
 	float targete_vel = -1;
-	double too_close_min = 100;//m
+	double too_close_min = 1000;
 	for(int i=0; i<m_vehicle_localization.perception.size(); i++){
 		double car_position_d = m_vehicle_localization.perception.at(i).car_position_d;
 		if(car_position_d>4*lane && car_position_d<4*lane+4){
@@ -77,13 +40,99 @@ vector<float>PATHPLANER::predication_within_lane(int path_size, const double &la
 	return {too_close, targete_vel};
 }
 
+vector<float> PATHPLANER::predication(int path_size, const double &lane, double future_car_s){
+	float pre_dis_front = -1;
+	float pre_dis_left_front = -1;
+	float pre_dis_left_back = -1;
+	float pre_dis_right_front = -1;
+	float pre_dis_right_back = -1;
+
+	vector<float> pre_front;
+	vector<float> pre_left_front;
+	vector<float> pre_left_back;
+	vector<float> pre_right_front;
+	vector<float> pre_right_back;
+/*
+    vector<float> pre_dis_front_vec;
+	vector<float> pre_dis_left_front_vec;
+	vector<float> pre_dis_left_back_vec;
+	vector<float> pre_dis_right_front_vec;
+	vector<float> pre_dis_right_back_vec;
+
+	pre_dis_front_vec.push_back(pre_dis_front);
+	pre_dis_left_front_vec.push_back(pre_dis_left_front);
+	pre_dis_left_back_vec.push_back(pre_dis_left_back);
+	pre_dis_right_front_vec.push_back(pre_dis_right_front);
+	pre_dis_right_back_vec.push_back(pre_dis_right_back);
+*/
+     string lane_num = get_main_car_lane();
+	 LANE_INFO vehicle_ID_vector = get_other_car_lane(); 
+
+	#if DEBUG_BUTTON
+		cout<<"vehicle_ID_lane_0";
+		for(int i=0;i<vehicle_ID_vector.vehicle_ID_lane_0.size();i++){
+			cout<<","<<vehicle_ID_vector.vehicle_ID_lane_0.at(i);
+		}
+		cout<<endl;
+
+		cout<<"vehicle_ID_lane_1";
+		for(int i=0;i<vehicle_ID_vector.vehicle_ID_lane_1.size();i++){
+		cout<<","<<vehicle_ID_vector.vehicle_ID_lane_1.at(i);
+		}
+		cout<<endl;
+
+		cout<<"vehicle_ID_lane_2";
+		for(int i=0;i<vehicle_ID_vector.vehicle_ID_lane_2.size();i++){
+		cout<<","<<vehicle_ID_vector.vehicle_ID_lane_2.at(i);
+		}
+		cout<<endl;
+
+	#endif 
+	 
+	if(lane_num =="lane_0"){
+		
+			pre_front = calc_min_pre_dis(vehicle_ID_vector.vehicle_ID_lane_0,path_size,future_car_s,"front");
+			pre_right_front = calc_min_pre_dis(vehicle_ID_vector.vehicle_ID_lane_1,path_size,future_car_s,"front");
+			pre_right_back = calc_min_pre_dis(vehicle_ID_vector.vehicle_ID_lane_1,path_size,future_car_s,"back");
+	
+			
+		//cout<<"main vehicle is in lane_0:--->"<<lane_num<<endl;
+	 }
+	else if(lane_num =="lane_1"){
+		cout<<"in lane_1"<<endl;
+		pre_front = calc_min_pre_dis(vehicle_ID_vector.vehicle_ID_lane_1,path_size,future_car_s,"front");
+		pre_right_front = calc_min_pre_dis(vehicle_ID_vector.vehicle_ID_lane_2,path_size,future_car_s,"front");
+		pre_right_back = calc_min_pre_dis(vehicle_ID_vector.vehicle_ID_lane_2,path_size,future_car_s,"back");
+		pre_left_front = calc_min_pre_dis(vehicle_ID_vector.vehicle_ID_lane_0,path_size,future_car_s,"front");
+		pre_left_back = calc_min_pre_dis(vehicle_ID_vector.vehicle_ID_lane_0,path_size,future_car_s,"back");
+		
+		
+		//cout<<"main vehicle is in lane_1:--->"<<lane_num<<endl;
+	}
+	else if(lane_num =="lane_2"){
+		pre_front = calc_min_pre_dis(vehicle_ID_vector.vehicle_ID_lane_2,path_size,future_car_s,"front");
+		pre_left_front = calc_min_pre_dis(vehicle_ID_vector.vehicle_ID_lane_1,path_size,future_car_s,"front");
+		pre_left_back = calc_min_pre_dis(vehicle_ID_vector.vehicle_ID_lane_1,path_size,future_car_s,"back");
+
+		//cout<<"main vehicle is in lane_2:--->"<<lane_num<<endl;
+	}
+	else if(lane_num =="unknown"){
+		
+		//cout<<"main vehicle is in unknown:--->"<<lane_num<<endl;
+	}
+
+	return {pre_front.at(0),pre_right_front.at(0),pre_right_back.at(0),pre_left_front.at(0),pre_left_back.at(0),\
+			pre_front.at(1),pre_right_front.at(1),pre_right_back.at(1),pre_left_front.at(1),pre_left_back.at(1)
+		};
+}
+
 vector<float> PATHPLANER::predication_neighbour_lane(int path_size, const double &lane, double future_car_s){
 
-vector<double> future_s_left_car, future_s_right_car;
+	vector<double> future_s_left_car, future_s_right_car;
 	vector<double> future_v_left_car, future_v_right_car;
 	for(int i=0; i<m_vehicle_localization.perception.size(); i++){
 		if(lane > 0){
-			//double d_lane_l = sensor_fusion[i][6];
+
 			double d_lane_l = m_vehicle_localization.perception.at(i).car_position_d;
 			if(d_lane_l >4*(lane-1) && d_lane_l<4*(lane-1)+4){
 
@@ -188,41 +237,27 @@ bool PATHPLANER::veicle_state_machine(vector<float> prediction_front, vector<flo
 	double lane_before = lane;
 	double cost_keep_lane,cost_change_left, cost_change_right;
 
-	//if have no vehicle or vehicle is vary far away in front of our car, just drive as fast as we can,
-	//no need to calculate the three states cost.
 	if(prediction_front[0] == -1 || prediction_front[0]>30){   
 		if(ref_vel<max_v){
 			ref_vel +=0.23;
 		}
 	}
-
-	// if finde vehicle in front of us, calculate the cost of the three states, choose the min cost state.
-	
-	// *****************the three states:keep_lane, change_left, change_right.************
-	
 	else{
-	       //when close to front vehicle,and it fast than our car, no need to slow down..	
 		if(ref_vel<max_v + 0.5){
 			if(prediction_front[1] > ref_vel){
 				ref_vel +=0.23;
 			}
-			//other conditions, when close to front vehicle slow down the acc according to the diff of v.
 			else{
 				ref_vel -=exp((ref_vel - prediction_front[1])/(max_v+0.5))/8.0;
 			}
 		}
 
 
-		cost_keep_lane = cost_of_all(weight_crash, weight_buffer, weight_save_time,
-				prediction_front[0], -1, ref_vel, prediction_front[1], -1, max_v);
+		cost_keep_lane = cost_of_all(weight_crash, weight_buffer, weight_save_time,prediction_front[0], -1, ref_vel, prediction_front[1], -1, max_v);
 
 
 		if(lane > 0){
-			//plus 12 to the cost of change lang, avoid frequent lane changes when cost_change_left
-			// and cost_change_right wave aroud cost_keep_lane.
-			cost_change_left =10 + cost_of_all(weight_crash, weight_buffer, weight_save_time,
-					prediction_left_right[0], prediction_left_right[2], ref_vel,
-					prediction_left_right[4],prediction_left_right[6], max_v);
+			cost_change_left =10 + cost_of_all(weight_crash, weight_buffer, weight_save_time,prediction_left_right[0], prediction_left_right[2], ref_vel,prediction_left_right[4],prediction_left_right[6], max_v);
 		}
 		else{
 			cost_change_left = 1000;
@@ -231,19 +266,14 @@ bool PATHPLANER::veicle_state_machine(vector<float> prediction_front, vector<flo
 
 
 		if(lane < 2){
-			cost_change_right =12 +  cost_of_all(weight_crash,weight_buffer, weight_save_time,
-					prediction_left_right[1],prediction_left_right[3], ref_vel,
-					prediction_left_right[5], prediction_left_right[7], max_v);
+			cost_change_right =12 +  cost_of_all(weight_crash,weight_buffer, weight_save_time,prediction_left_right[1],prediction_left_right[3], ref_vel,prediction_left_right[5], prediction_left_right[7], max_v);
 		}
 		else{
 			cost_change_right = 1000;
 		}
-	
-
  		bool change_left_state = false;
 		bool change_right_state = false;
 
-		//set default state keep_lane.
 		double min_cost;
 		min_cost = cost_keep_lane;
 
@@ -255,14 +285,12 @@ bool PATHPLANER::veicle_state_machine(vector<float> prediction_front, vector<flo
 			change_right_state = true;
 		}
 
-		//when cost_change_right is min, change to right.
 		if(change_right_state){
 			if(lane < 2){
 				lane += 1;
 			}
 		} 
 
-		//when cost_change_left is min, change to left.
 		if(change_left_state && !change_right_state){
 			if(lane > 0){
 				lane -= 1;
@@ -388,3 +416,129 @@ vector<vector<double>> PATHPLANER::trajectories_sample(
 	return trjectoryXY;
 //cout<<"Hello TS!"<<endl;
 }
+
+string PATHPLANER::get_main_car_lane(){
+            string lane_num;
+            double car_position_d = m_vehicle_localization.main_car_localization.car_position_d;
+
+            if(0 <car_position_d && car_position_d<4)
+                lane_num = "lane_0";
+            else if(4 <car_position_d && car_position_d<8)
+                lane_num = "lane_1";
+            else if(8 <car_position_d && car_position_d<12)
+                lane_num = "lane_2";
+            else
+                lane_num = "unknown";
+            return lane_num;
+}
+
+LANE_INFO PATHPLANER::get_other_car_lane(){
+            string lane_num;
+			LANE_INFO vehicle_ID_vector;
+
+			int car_num = m_vehicle_localization.perception.size();
+			vector<float> vehicle_ID_lane_0;
+			vector<float> vehicle_ID_lane_1;
+			vector<float> vehicle_ID_lane_2;
+			vector<float> vehicle_ID_lane_unknow;
+
+			vehicle_ID_lane_0.push_back(0);
+			vehicle_ID_lane_1.push_back(1);
+			vehicle_ID_lane_2.push_back(2);
+			vehicle_ID_lane_unknow.push_back(3);
+
+			//vector<vector<float>> vehicle_ID_vector;
+
+			for(int i=0;i<car_num;i++){
+				double car_position_d = m_vehicle_localization.perception.at(i).car_position_d;
+				if(0 <car_position_d && car_position_d<4){
+					lane_num = "lane_0";
+					vehicle_ID_lane_0.push_back(m_vehicle_localization.perception.at(i).car_ID);
+				}  
+            	else if(4 <car_position_d && car_position_d<8){
+					lane_num = "lane_1";
+					vehicle_ID_lane_1.push_back(m_vehicle_localization.perception.at(i).car_ID);
+				}   	
+            	else if(8 <car_position_d && car_position_d<12){
+					lane_num = "lane_2";
+					vehicle_ID_lane_2.push_back(m_vehicle_localization.perception.at(i).car_ID);
+				}            	
+            	else
+                	lane_num = "unknown";
+					vehicle_ID_lane_unknow.push_back(m_vehicle_localization.perception.at(i).car_ID);
+			}
+			
+			vehicle_ID_vector.vehicle_ID_lane_0 = vehicle_ID_lane_0;
+			vehicle_ID_vector.vehicle_ID_lane_1 = vehicle_ID_lane_1;
+			vehicle_ID_vector.vehicle_ID_lane_2 = vehicle_ID_lane_2;
+			vehicle_ID_vector.vehicle_ID_lane_unknow = vehicle_ID_lane_unknow;
+
+			return vehicle_ID_vector;
+
+}
+
+vector<float> PATHPLANER::calc_min_pre_dis(vector<float> vehicle_ID,int path_size,double future_car_s,string calc_mode){
+		float pre_delta_dis = -1;
+		float pre_delta_vel = -1;
+		vector<float> pre_delta_dis_vec_front;
+		vector<float> pre_delta_dis_vec_back;
+		vector<float> pre_delta_vel_vec_front;
+		vector<float> pre_delta_vel_vec_back;
+
+		float pre_delta_dis_min = -1;
+		float pre_delta_vel_min = -1;
+		//double car_position_d = m_vehicle_localization.perception.at(i).car_position_d;
+		if(vehicle_ID.size()==1){
+			pre_delta_dis_min = -1;
+			pre_delta_vel_min = -1;
+		}
+		else{
+			for(int i=1;i<vehicle_ID.size();i++){
+				for(int j=0;j<m_vehicle_localization.perception.size();j++){
+					if(vehicle_ID.at(i) == m_vehicle_localization.perception.at(j).car_ID){
+
+						double car_velocity_x = m_vehicle_localization.perception.at(j).car_velocity_x;
+						double car_velocity_y = m_vehicle_localization.perception.at(j).car_velocity_y;
+						double car_velocity = sqrt(car_velocity_x*car_velocity_x + car_velocity_y*car_velocity_y);
+						double car_s = m_vehicle_localization.perception.at(j).car_position_s;
+
+						double pre_car_s = car_s+car_velocity*m_time_step*path_size;
+						
+						pre_delta_dis = pre_car_s - future_car_s;
+						if(pre_delta_dis>0){
+							pre_delta_dis_vec_front.push_back(pre_delta_dis);
+							pre_delta_vel_vec_front.push_back(car_velocity);
+						}
+						
+						if(pre_delta_dis<0){
+							pre_delta_dis_vec_back.push_back(pre_delta_dis);
+							pre_delta_vel_vec_back.push_back(car_velocity);
+						}
+						#ifdef DEBUG_BUTTON
+							cout<<"pre_delta_dis-->"<<","<<pre_delta_dis<<endl;
+						#endif
+					}
+				}			
+				if(calc_mode == "front"){
+					cout<<"in front"<<endl;
+					auto min_dis_value_address = min_element(pre_delta_dis_vec_front.begin(), pre_delta_dis_vec_front.end());
+					pre_delta_dis_min = *min_dis_value_address;
+					int index = distance(pre_delta_dis_vec_front.begin(),min_dis_value_address);
+					
+					pre_delta_vel_min = pre_delta_vel_vec_front.at(index);
+
+				}		
+				if(calc_mode == "back"){
+					cout<<"in back"<<endl;
+					auto min_dis_value_address = min_element(pre_delta_dis_vec_back.begin(), pre_delta_dis_vec_back.end());
+					pre_delta_dis_min = *min_dis_value_address;
+					int index = distance(pre_delta_dis_vec_back.begin(),min_dis_value_address);
+
+					pre_delta_vel_min = pre_delta_vel_vec_back.at(index);
+				}
+			}
+		} 	
+		return {pre_delta_dis_min,pre_delta_vel_min};
+}
+
+

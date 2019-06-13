@@ -51,7 +51,7 @@ int main() {
   	map_waypoints_dx.push_back(d_x);
   	map_waypoints_dy.push_back(d_y);
   }
-  double lane = 1;
+  double lane = 1;//the second lane count from the left
   double ref_vel = 0;
   h.onMessage([&ref_vel,&lane,&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {
@@ -66,15 +66,10 @@ int main() {
       auto s = hasData(data);
 
       if (s != "") {
-        auto j = json::parse(s);
-        
-        string event = j[0].get<string>();
-        
+        auto j = json::parse(s); // j[1] is the data JSON object   
+        string event = j[0].get<string>();   
         if (event == "telemetry") {
 
-          //sensor_data.perception.capacity;
-          // j[1] is the data JSON object
-          
         	// Main car's localization Data
           	double car_x = j[1]["x"];
           	double car_y = j[1]["y"];
@@ -92,6 +87,7 @@ int main() {
 
             cout<<"Main car's location"<<","<<car_x<<","<<car_y<<","<<car_s<<","<<car_d<<","<<car_yaw<<","<<car_speed<<endl;
 
+
           	// Previous path data given to the Planner
           	auto previous_path_x = j[1]["previous_path_x"];
           	auto previous_path_y = j[1]["previous_path_y"];
@@ -99,7 +95,7 @@ int main() {
           	double end_path_s = j[1]["end_path_s"];
           	double end_path_d = j[1]["end_path_d"];
 
-            cout<<"Previous path"<<","<<previous_path_x<<","<<previous_path_y<<","<<end_path_s<<","<<end_path_d<<endl;
+            //cout<<"Previous path"<<","<<previous_path_x<<","<<previous_path_y<<","<<end_path_s<<","<<end_path_d<<endl;
 
           	// Sensor Fusion Data, a list of all other cars on the same side of the road.
           	auto sensor_fusion = j[1]["sensor_fusion"];
@@ -112,9 +108,9 @@ int main() {
             //SENSOR_FUSION_LIST * test_data_set = new SENSOR_FUSION_LIST;   
             //test_data_set->perception.at(0).car_ID = 1;          
 
-            cout<<"Sensor Fusion"<<",";
+            //cout<<"Sensor Fusion"<<",";
             for(int i = 0;i<sensor_fusion.size();i++){
-              cout<<sensor_fusion.at(i)<<",";
+              //cout<<sensor_fusion.at(i)<<",";
               
               perception_test.at(i).car_ID = sensor_fusion.at(i)[0]; 
               perception_test.at(i).car_position_x = sensor_fusion.at(i)[1];
@@ -127,7 +123,7 @@ int main() {
               sensor_data.perception.push_back(perception_test.at(i));
           
             }
-            cout<<endl;
+            //cout<<endl;
 
           	json msgJson;
 
@@ -139,6 +135,7 @@ int main() {
 
 		int PATH_SIZE = 30;
 		double max_v = 49.5;
+    double time_interval = 0.02;
 
 		double ref_x = car_x;
 		double ref_y = car_y;
@@ -147,29 +144,49 @@ int main() {
 		int path_size = previous_path_x.size();
 		double future_car_s = end_path_s;
 
-    
-    //vehicle_localization.car_ID = sensor_fusion.at()
+    PATHPLANER lattice(sensor_data,time_interval);		
+		//get the diff of s and v about the surounding vehicle
+    //lattice.get_other_car_lane();
+    /*
+    vector<float> predict = lattice.predication(path_size, lane, future_car_s);
 
-    PATHPLANER lattice(sensor_data,0.02);
-    //lattice.trajectories_sample();
-		
-		//get the diff of s and v betwen the front vehicle
+    cout<<"predict---->";
+    for(int i=0;i<predict.size();i++){
+        cout<<","<<predict.at(i);
+    }
+    cout<<endl;
+
+    
     vector<float> predict_front = lattice.predication_within_lane(path_size, lane, future_car_s);
 
-		//get the diff of s and v betwen the front and after vehicle, when our vehicle change lane to left or right.
+    cout<<"predict_front---->";
+    for(int i=0;i<predict_front.size();i++){
+        cout<<","<<predict_front.at(i);
+    }
+    cout<<endl;
+
     vector<float> predict_left_right = lattice.predication_neighbour_lane(path_size, lane, future_car_s);
 
+    cout<<"predict_left_right---->";
+    for(int i=0;i<predict_left_right.size();i++){
+        cout<<","<<predict_left_right.at(i);
+    }
+    cout<<endl;
+    */
 		//Using finite state machines and cost function to choose the best state.
 		//the ref_vel and lane will be changed in this function.
 		//return bool change_lane, representative the lane change or not.
+
+    vector<float> predict_front = lattice.predication_within_lane(path_size, lane, future_car_s);
+    vector<float> predict_left_right = lattice.predication_neighbour_lane(path_size, lane, future_car_s);
 		bool change_lane = lattice.veicle_state_machine(predict_front, predict_left_right, ref_vel, lane, max_v);
 		//generate the trajectory points.
     vector<vector<double>> traject = lattice.trajectories_sample(previous_path_x, previous_path_y, ref_x, ref_y, ref_yaw, change_lane,PATH_SIZE, car_s, map_waypoints_x, map_waypoints_y, map_waypoints_s, lane, ref_vel);
 
+
     next_x_vals = traject[0];
     next_y_vals = traject[1];
 		//****************************************************//
-            
 
           	msgJson["next_x"] = next_x_vals;
           	msgJson["next_y"] = next_y_vals;

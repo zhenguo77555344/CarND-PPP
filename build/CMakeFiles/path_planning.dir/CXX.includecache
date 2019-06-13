@@ -775,6 +775,8 @@ lapacke_mangling.h
 /Users/wazheng/Documents/2_Udacity/Udacity_Project/CarND-PPP/src/PathPlaner.cpp
 PathPlaner.h
 /Users/wazheng/Documents/2_Udacity/Udacity_Project/CarND-PPP/src/PathPlaner.h
+algorithm
+-
 
 /Users/wazheng/Documents/2_Udacity/Udacity_Project/CarND-PPP/src/PathPlaner.h
 vector
@@ -782,6 +784,8 @@ vector
 math.h
 -
 iostream
+-
+string
 -
 spline.h
 /Users/wazheng/Documents/2_Udacity/Udacity_Project/CarND-PPP/src/spline.h
