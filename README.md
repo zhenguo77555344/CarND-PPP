@@ -1,7 +1,9 @@
 # Write up
-This project mainly consists of the following modules: **prediction, cost_function, vehicle and trajectory**.
-This program can easily run to 20 miles or more, or even 30 miles, as shown in the screenshot below.
-![screenshot](./pic_writeup/path_plan5.jpg)
+The path planner is implemented as one C++ class which is named as PATHPLANER,with public member function as the following:
+predication_within_lane(...),predication_neighbour_lane(...),cost_function(...),vehicle_state_machine(...),trajetories_sample(...) and several private menmber function.
+
+This program can meet the Udacity's rubrics, as shown in the screenshot below.
+![screenshot](./pic/write_up.png)
 
 
 ## prediction
@@ -21,7 +23,7 @@ This fuction used to punish this situation that front vehicle moving slowly.The 
 cost_crash = (20 - front/after_diff_s)*weighe_crash.
 This fuction used to punish the crash when change_lane when other cars are within a relatively short distance. The nearer, the more dangerous, the biger the cost_crash.
 
-##  vehicle
+##  vehicle_state_machine
 Use the idea of finite states maching. I've chosen three basic states here. **keep_lane, change_left, change_right**. The keep_lane is default Setting.
 1. When there is no car within 30 meters, just keep lane and accelerate the car to its maximum speed.
 2. when prediction_front tells there is a car within 30 meters. Slow down according to the speed of the car ahead.
@@ -32,7 +34,7 @@ Use the idea of finite states maching. I've chosen three basic states here. **ke
 
 **Helpful hints:** plus additional cost 10 to the total cost of change lane,helps prevent the vehicle from swinging from lane to side lane when the cost_change_left , cost_change_right and cost_keep_lane's difference is not that big.
 
-##  trajectory
+##  trajectory_sample
 use spline to fitting trajectory. Here use 5 points to fit trajectory. 
 In order to ensure the smoothness and continuity of the trajectory, the first two points select the last point and fifth to last from the previous trajectory.
 1. If keep_lane
@@ -43,6 +45,10 @@ The last three points select the middle point of the road 50,70,90 meters in fro
 this will help to reduce jerk when change lane.
 
 **Helpful hints:** Choosing the fifth point from the bottom relative to the second from the bottom is very helpful in staying on the center line when follow the front car.
+
+## in the end
+path planning is realy interesting thing.I am trying the take Baidu apollo as reference,also it take me a lot of time for debugging.
+Now I would like to try the next project,when I have time I will do this project again and make it better.
 
 -----
 
