@@ -50,6 +50,22 @@ this will help to reduce jerk when change lane.
 path planning is realy interesting thing.I am trying the take Baidu apollo as reference,also it take me a lot of time for debugging.
 Now I would like to try the next project,when I have time I will do this project again and make it better.
 
+More In-depth Knowledge:could be found in the Udacity Reviews and Tutorial in deep file
+
+    Path planning in environments of different complexity
+    Robot Motion Planning
+    Robotics Path Planning
+    Path Planning module in Robotics
+    Robo Realm Path Planning
+    Difference between path planning and motion planning
+    Excellent tutorial on a robot path planning
+    Path Planning and Collision Avoidance
+    Safe Motion Planning for Autonomous Driving
+    Local and Global Path Generation for Autonomous Vehicles Using Splines
+
+
+
+
 -----
 
 # CarND-Path-Planning-Project
